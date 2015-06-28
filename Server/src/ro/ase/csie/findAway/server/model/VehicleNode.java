@@ -97,7 +97,7 @@ public class VehicleNode extends PathNode implements Serializable,
 	public void printNode() {
 		System.out.println("Vehicle from " + this.sName + " to " + this.tName
 				+ " by " + this.getSubkind() + " at " + this.getPrice()
-				+ "€, in " + this.getDuration());
+				+ "ï¿½, in " + this.getDuration() + " min");
 
 	}
 

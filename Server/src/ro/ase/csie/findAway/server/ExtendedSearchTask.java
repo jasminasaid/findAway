@@ -1,6 +1,7 @@
 package ro.ase.csie.findAway.server;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -54,6 +55,7 @@ public class ExtendedSearchTask extends RecursiveTask<List<ExtendedPath>> {
 		this.threadID = Thread.currentThread().getId();
 	}
 
+	//
 	@Override
 	protected List<ExtendedPath> compute() {
 		VehicleNode vNode = new VehicleNode();
@@ -61,46 +63,39 @@ public class ExtendedSearchTask extends RecursiveTask<List<ExtendedPath>> {
 		vNode.settPos(dest);
 		List<ExtendedPath> paths = new ArrayList<ExtendedPath>();
 		List<ExtendedSearchTask> tasks = new ArrayList<ExtendedSearchTask>();
-		List<PathNode> nearestNodes = vNode.getNearestNodesFromSource(kdTree);
-
+		List<PathNode> nearestNodes = vNode.getNearestNodesFromSource(kdTree,
+				flights);
+		ExtendedPath newPath = new ExtendedPath(path);
 		for (PathNode node : nearestNodes) {
-//			 System.out.println("Thread " + threadID + " computing: ");
-//			 node.printNode();
+			// System.out.println("Thread " + threadID + " computing: ");
+			// node.printNode();
 			if (!visitedNodes.contains(node)) {
 				visitedNodes.add(node);
-				ExtendedPath newPath = new ExtendedPath(path);
+				newPath = new ExtendedPath(path);
 				newPath.add(node);
-				if (node instanceof AirportNode) {
-					AirportNode actual = (AirportNode) node;
-					if (isDestinationNode(actual.gettPos(), dest)
-							|| isDestinationNode(actual.getfPos(), dest)) {
+				if (isDestinationNode(node.gettPos(), dest)) {
+					if (isEligiblePath(newPath)) {
 						paths.add(newPath);
 						allPaths.add(newPath);
-					} else {
-						if (flights.get(actual) != null) {
-							for (AirportNode an : flights.get(actual)) {
-//								if (!visitedNodes.contains(an)) {
-									ExtendedSearchTask newTask = new ExtendedSearchTask(
-											an.gettPos(), dest, kdTree,
-											flights, visitedNodes, newPath,
-											allPaths);
-									newTask.fork();
-									tasks.add(newTask);
-//								}
-							}
-						}
 					}
 				} else {
-					if (isDestinationNode(node.gettPos(), dest)) {
-						paths.add(newPath);
-						allPaths.add(newPath);
-					} else {
-						ExtendedSearchTask newTask = new ExtendedSearchTask(
-								node.gettPos(), dest, kdTree, flights,
-								visitedNodes, newPath, allPaths);
-						newTask.fork();
-						tasks.add(newTask);
+					ExtendedSearchTask newTask = new ExtendedSearchTask(
+							node.gettPos(), dest, kdTree, flights,
+							visitedNodes, newPath, allPaths);
+					newTask.fork();
+					tasks.add(newTask);
+				}
+			} else {
+				ExtendedPath existingPath = getBestExistingPath(node.getsPos(),
+						dest);
+				if (existingPath != null && existingPath.size() > 0) {
+					ExtendedPath newExistingPath = new ExtendedPath(newPath);
+					newExistingPath.addSubPath(existingPath);
+					if (isEligiblePath(newExistingPath)) {
+						paths.add(newExistingPath);
+						allPaths.add(newExistingPath);
 					}
+
 				}
 			}
 		}
@@ -113,6 +108,63 @@ public class ExtendedSearchTask extends RecursiveTask<List<ExtendedPath>> {
 		for (ExtendedSearchTask task : tasks) {
 			paths.addAll(task.join());
 		}
+	}
+
+	public ExtendedPath getBestExistingPath(Position source, Position dest) {
+		List<ExtendedPath> existingPaths = new ArrayList<ExtendedPath>();
+		for (int i = 0; i < allPaths.size(); i++) {
+			ExtendedPath path = allPaths.get(i).getSubPath(source, dest);
+			if (path.size() > 0)
+				existingPaths.add(path);
+		}
+
+		ExtendedPath bestPath = null;
+		if (existingPaths.size() > 0) {
+			Collections.sort(existingPaths);
+			bestPath = existingPaths.get(0);
+		}
+
+		return bestPath;
+
+	}
+
+	public boolean isEligiblePath(ExtendedPath path) {
+		if (pathHasCycles(path))
+			return false;
+		if (isDuplicatePath(path))
+			return false;
+		return true;
+	}
+
+	public boolean pathHasCycles(ExtendedPath path) {
+		List<Position> positions = new ArrayList<Position>();
+		for (int i = 0; i < path.size(); i++) {
+			if (positions.contains((path.get(i).getsPos())))
+				return true;
+			positions.add(path.get(i).getsPos());
+		}
+		return false;
+	}
+
+	public boolean isDuplicatePath(ExtendedPath path) {
+		int duplicates = 0;
+		for (int i = 0; i < allPaths.size(); i++) {
+			duplicates = 0;
+			if (allPaths.get(i).size() == path.size()) {
+				for (int j = 0; j < path.size(); j++) {
+					if (allPaths.get(i).get(j).getsPos()
+							.isSame(path.get(j).getsPos())
+							&& allPaths.get(i).get(j).gettPos()
+									.isSame(path.get(j).gettPos()))
+						duplicates++;
+					else
+						break;
+				}
+				if (duplicates == path.size())
+					return true;
+			}
+		}
+		return false;
 	}
 
 	public boolean isDestinationNode(Position actualPos, Position destPos) {

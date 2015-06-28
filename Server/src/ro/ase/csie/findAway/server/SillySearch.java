@@ -83,8 +83,8 @@ public class SillySearch {
 									break;
 								}
 							}
-							// if (!visitedAirports.contains(an.gettDest()))
-							// airportsStack.add(an.gettDest());
+							 if (!visitedAirports.contains(an.gettDest()))
+							 airportsStack.add(an.gettDest());
 						}
 					}
 					if (predecessor != null) {

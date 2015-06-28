@@ -22,19 +22,19 @@ public class PathsKDTreeBuilder {
 	public void buildKDTree() {
 
 		AirportsGraphBuilder aGraph = new AirportsGraphBuilder();
-		for (Airport a : aGraph.airports.keySet()) {
+		for (Airport a : aGraph.build().keySet()) {
 			AirportNode an = aGraph.airports.get(a).get(0);
 			pathsKDTree.insert(getKeyFromPosition(new Position(an.getSource()
 					.getPos())), an);
 		}
 
 		TransitGraphBuilder tGraph = new TransitGraphBuilder();
-		for (TransitNode t : tGraph.nodes) {
+		for (TransitNode t : tGraph.build()) {
 			pathsKDTree.insert(getKeyFromPosition(t.getsPos()), t);
 		}
 
 		VehicleGraphBuilder vGraph = new VehicleGraphBuilder();
-		for (VehicleNode v : vGraph.nodes) {
+		for (VehicleNode v : vGraph.build()) {
 			pathsKDTree.insert(getKeyFromPosition(v.getsPos()), v);
 		}
 	}

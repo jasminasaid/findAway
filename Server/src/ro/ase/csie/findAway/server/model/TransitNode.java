@@ -60,7 +60,7 @@ public class TransitNode extends PathNode implements Serializable,
 	@Override
 	public void printNode() {
 		System.out.println("Transit from " + this.sName + " to " + this.tName
-				+ " at " + this.getPrice() + "€, in " + this.getDuration());
+				+ " at " + this.getPrice() + "ï¿½, in " + this.getDuration() + " min");
 	}
 
 	@Override

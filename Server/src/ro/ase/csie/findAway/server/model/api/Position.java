@@ -104,6 +104,21 @@ public class Position implements Serializable {
 		return this.lat + "," + this.lon;
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (this.getClass() != obj.getClass())
+			return false;
+		Position pos = (Position) obj;
+		if (!this.isSame(pos))
+			return false;
+		return true;
+	}
+	
+	
 	public boolean isSame(Position pos) {
 		if (this == null || pos == null)
 			throw new NullPointerException("Null position object");

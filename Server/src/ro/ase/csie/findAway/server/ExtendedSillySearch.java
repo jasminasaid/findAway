@@ -22,18 +22,20 @@ public class ExtendedSillySearch {
 
 	KDTree kdTree;
 	List<ExtendedPath> allPaths;
+	List<ExtendedPath> alternativePaths;
 	Stack<PathNode> nodesStack;
 	Set<PathNode> visitedNodes;
 	Set<Airport> visitedAirports;
 	Map<Airport, List<AirportNode>> flights;
 
 	public ExtendedSillySearch() {
-		kdTree = new PathsKDTreeBuilder().pathsKDTree;
+		kdTree = new PathsKDTreeBuilder().build();
 		allPaths = new ArrayList<ExtendedPath>();
+		alternativePaths = new ArrayList<ExtendedPath>();
 		nodesStack = new Stack<PathNode>();
 		visitedNodes = new HashSet<PathNode>();
 		visitedAirports = new HashSet<Airport>();
-		flights = new AirportsGraphBuilder().airports;
+		flights = new AirportsGraphBuilder().build();
 	}
 
 	public void getShortestRoutes(String sPlace, String dPlace) {
@@ -45,7 +47,7 @@ public class ExtendedSillySearch {
 		Position dest = new Position("50.087440490722656,14.421259880065918");
 		if (source != null && dest != null) {
 			extendedSearch(source, dest);
-			int maxPaths = (allPaths.size() < 40) ? allPaths.size() : 40;
+			int maxPaths = (allPaths.size() < 10) ? allPaths.size() : 10;
 			Collections.sort(allPaths);
 			for (int i = 0; i < maxPaths; i++) {
 
@@ -121,69 +123,160 @@ public class ExtendedSillySearch {
 	//
 	// }
 
+	// public void extendedSearch(Position source, Position dest) {
+	// VehicleNode vNode = new VehicleNode();
+	// vNode.setsPos(source);
+	// List<PathNode> nearestNodes = vNode.getNearestNodesFromSource(kdTree,
+	// flights);
+	// Collections.reverse(nearestNodes);
+	// nodesStack.addAll(nearestNodes);
+	// ExtendedPath path = new ExtendedPath();
+	//
+	// while (nodesStack.size() > 0) {
+	// PathNode actual = nodesStack.pop();
+	// if (!visitedNodes.contains(actual)) {
+	// if (actual instanceof AirportNode) {
+	// AirportNode airpNode = (AirportNode) actual;
+	// if (!visitedAirports.contains(airpNode.getSource())) {
+	// visitedAirports.add(airpNode.getSource());
+	// // if (flights.get(key) != null)
+	// nodesStack.addAll(flights.get(airpNode.getSource()));
+	// } else {
+	// visitedNodes.add(actual);
+	// // path.add(actual);
+	// if (isDestinationNode(actual.gettPos(), dest)) {
+	// path.add(actual);
+	// ExtendedPath newPath = new ExtendedPath(path);
+	// if (isEligiblePath(newPath)) {
+	// allPaths.add(newPath);
+	// if (path.size() > 0)
+	// restorePreviousPath(path);
+	// }
+	// } else {
+	// nearestNodes = actual.getNearestNodesFromTarget(
+	// kdTree, flights);
+	// if (nearestNodes.size() > 0) {
+	// path.add(actual);
+	// Collections.reverse(nearestNodes);
+	// nodesStack.addAll(nearestNodes);
+	// } else if (path.size() > 0)
+	// path.remove(path.size() - 1);
+	// }
+	// }
+	// } else {
+	// visitedNodes.add(actual);
+	// // path.add(actual);
+	// if (isDestinationNode(actual.gettPos(), dest)) {
+	// path.add(actual);
+	// ExtendedPath newPath = new ExtendedPath(path);
+	// if (isEligiblePath(newPath)) {
+	// allPaths.add(newPath);
+	// if (path.size() > 0)
+	// restorePreviousPath(path);
+	// }
+	// } else {
+	// nearestNodes = actual.getNearestNodesFromTarget(kdTree,
+	// flights);
+	// if (nearestNodes.size() > 0) {
+	// path.add(actual);
+	// Collections.reverse(nearestNodes);
+	// nodesStack.addAll(nearestNodes);
+	// } else if (path.size() > 0)
+	// path.remove(path.size() - 1);
+	// }
+	// }
+	// } else {
+	// // path.add(actual);
+	// ExtendedPath existingPath = getBestExistingPath(
+	// actual.getsPos(), dest);
+	// if (existingPath != null) {
+	// ExtendedPath newPath = new ExtendedPath(path);
+	// newPath.addSubPath(existingPath);
+	// if (isEligiblePath(newPath)) {
+	// allPaths.add(newPath);
+	// }
+	// }
+	// if (path.size() > 0) {
+	// // restorePreviousPath(path);
+	// path.remove(path.size() - 1);
+	// // PathNode lastVisited = path.get(path.size() - 1);
+	// // nodesStack.addAll(lastVisited
+	// // .getNearestNodesFromTarget(kdTree));
+	// // // while()
+	// }
+	// }
+	// }
+	//
+	// }
+
 	public void extendedSearch(Position source, Position dest) {
 		VehicleNode vNode = new VehicleNode();
 		vNode.setsPos(source);
-		List<PathNode> nearestNodes = vNode.getNearestNodesFromSource(kdTree);
-		Collections.reverse(nearestNodes);
+		List<PathNode> nearestNodes = vNode.getNearestNodesFromSource(kdTree,
+				flights);
+		// Collections.reverse(nearestNodes);
 		nodesStack.addAll(nearestNodes);
 		ExtendedPath path = new ExtendedPath();
 
 		while (nodesStack.size() > 0) {
 			PathNode actual = nodesStack.pop();
 			if (!visitedNodes.contains(actual)) {
-				if (actual instanceof AirportNode) {
-					AirportNode airpNode = (AirportNode) actual;
-					if (!visitedAirports.contains(airpNode.getSource())) {
-						visitedAirports.add(airpNode.getSource());
-						// if (flights.get(key) != null)
-						nodesStack.addAll(flights.get(airpNode.getSource()));
-					}
-					else {
-						visitedNodes.add(actual);
+				visitedNodes.add(actual);
+				if (isDestinationNode(actual.gettPos(), dest)) {
+					if (isDestinationNode(path.get(0).getsPos(), source)) {
 						path.add(actual);
-						if (isDestinationNode(actual.gettPos(), dest)) {
-							ExtendedPath newPath = new ExtendedPath(path);
-							if (isEligiblePath(newPath)) {
-								allPaths.add(newPath);
-								if (path.size() > 0)
-									restorePreviousPath(path);
-							}
-						} else {
-							nearestNodes = actual.getNearestNodesFromTarget(kdTree);
-							Collections.reverse(nearestNodes);
-							nodesStack.addAll(nearestNodes);
-						}
-					}
-				} else {
-					visitedNodes.add(actual);
-					path.add(actual);
-					if (isDestinationNode(actual.gettPos(), dest)) {
 						ExtendedPath newPath = new ExtendedPath(path);
+						alternativePaths.add(newPath);
 						if (isEligiblePath(newPath)) {
 							allPaths.add(newPath);
-							if (path.size() > 0)
-								restorePreviousPath(path);
+							// if (path.size() > 0)
+							// restorePreviousPath(path);
+							// path.remove(path.size() - 1);
 						}
-					} else {
-						nearestNodes = actual.getNearestNodesFromTarget(kdTree);
-						Collections.reverse(nearestNodes);
-						nodesStack.addAll(nearestNodes);
+						if (path.size() > 0)
+							restorePreviousPath(path);
 					}
+				} else {
+					nearestNodes = getUnvisitedNodes(actual
+							.getNearestNodesFromTarget(kdTree, flights));
+					while (nearestNodes.size() == 0 && path.size() > 0) {
+						actual = path.remove(path.size() - 1);
+						nearestNodes = getUnvisitedNodes(actual
+								.getNearestNodesFromTarget(kdTree, flights));
+					}
+					path.add(actual);
+					// Collections.reverse(nearestNodes);
+					nodesStack.addAll(nearestNodes);
+					// if (nearestNodes.size() > 0) {
+					// path.add(actual);
+					// Collections.reverse(nearestNodes);
+					// nodesStack.addAll(nearestNodes);
+					// }
+					// // else if (path.size() > 0)
+					// // path.remove(path.size() - 1);
+					//
 				}
 			} else {
-				path.add(actual);
+				// path.add(actual);
 				ExtendedPath existingPath = getBestExistingPath(
 						actual.getsPos(), dest);
 				if (existingPath != null) {
+					// path.add(actual);
 					ExtendedPath newPath = new ExtendedPath(path);
 					newPath.addSubPath(existingPath);
+					alternativePaths.add(newPath);
 					if (isEligiblePath(newPath)) {
 						allPaths.add(newPath);
 					}
 				}
-				if (path.size() > 0)
+				if (path.size() > 0) {
 					restorePreviousPath(path);
+					// path.remove(path.size() - 1);
+					// PathNode lastVisited = path.get(path.size() - 1);
+					// nodesStack.addAll(lastVisited
+					// .getNearestNodesFromTarget(kdTree));
+					// // while()
+				}
 			}
 		}
 
@@ -193,7 +286,8 @@ public class ExtendedSillySearch {
 		List<ExtendedPath> existingPaths = new ArrayList<ExtendedPath>();
 		for (int i = 0; i < allPaths.size(); i++) {
 			ExtendedPath path = allPaths.get(i).getSubPath(source, dest);
-			existingPaths.add(path);
+			if (path.size() > 0)
+				existingPaths.add(path);
 		}
 
 		ExtendedPath bestPath = null;
@@ -203,7 +297,7 @@ public class ExtendedSillySearch {
 		}
 
 		return bestPath;
- 
+
 	}
 
 	public boolean isEligiblePath(ExtendedPath path) {
@@ -250,11 +344,56 @@ public class ExtendedSillySearch {
 	}
 
 	public void restorePreviousPath(ExtendedPath path) {
-		 path.remove(path.size() - 1);
-		 PathNode lastVisited = path.get(path.size()-1);
-		nodesStack.addAll(lastVisited.getNearestNodesFromTarget(kdTree));
+		// path.remove(path.size() - 1);
+		// PathNode lastVisited = path.get(path.size() - 1);
+		PathNode lastVisited = path.get(path.size() - 1);
+		List<PathNode> nearestNodes = getUnvisitedNodes(lastVisited
+				.getNearestNodesFromSource(kdTree, flights));
+		while (nearestNodes.size() == 0 && path.size() > 0) {
+			lastVisited = path.remove(path.size() - 1);
+			nearestNodes = getUnvisitedNodes(lastVisited
+					.getNearestNodesFromTarget(kdTree, flights));
+		}
+		// Collections.reverse(nearestNodes);
+		nodesStack.addAll(nearestNodes);
+		// if (nearestNodes.size() == 0)
+		// path.remove(path.size() - 1);
+		// else {
+		// // path.remove(path.size() - 1);
+		// Collections.reverse(nearestNodes);
+		// nodesStack.addAll(nearestNodes);
+		// }
+		// List<PathNode> unvisitedNodes = getUnvisitedNodes(nearestNodes);
+		// if (unvisitedNodes.size() == 0) {
+		// path.remove(path.size() - 1);
+		//
+		// } else {
+		// nodesStack.addAll(unvisitedNodes);
+		// }
 		// nodesStack.add(lastVisited);
 		// visitedNodes.remove(lastVisited);
+	}
+
+	public List<PathNode> getUnvisitedNodes(List<PathNode> nearestNodes) {
+		List<PathNode> unvisited = new ArrayList<PathNode>();
+		for (PathNode node : nearestNodes) {
+			// if (node instanceof AirportNode) {
+			// // unvisited.addAll(flights.get(((AirportNode)
+			// // node).getSource()));
+			// List<AirportNode> airportNodes = flights
+			// .get(((AirportNode) node).getSource());
+			// if (airportNodes != null) {
+			// for (AirportNode an : airportNodes) {
+			// if (!visitedNodes.contains(an))
+			// unvisited.add(an);
+			// }
+			// }
+			// } else
+			if (!visitedNodes.contains(node))
+				unvisited.add(node);
+		}
+		return unvisited;
+
 	}
 
 	public static void main(String[] args) {
